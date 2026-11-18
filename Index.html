@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Barber Goat – Agende seu corte</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#EEF1F2;--surface:#fff;--ink:#14232A;--muted:#55646B;--line:#CBD3D7;--red:#C8372D;--blue:#2B4C7E;--on:#fff;color-scheme:light;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0F1B20;--surface:#172830;--ink:#EAF0F2;--muted:#9BAAB1;--line:#2A3E47;--red:#E5584D;--blue:#7FA3DD;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0F1B20;--surface:#172830;--ink:#EAF0F2;--muted:#9BAAB1;--line:#2A3E47;--red:#E5584D;--blue:#7FA3DD;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 1rem/1.5 Barlow,system-ui,sans-serif}
+.pole{height:12px;background:repeating-linear-gradient(-45deg,var(--red) 0 12px,#fff 12px 24px,var(--blue) 24px 36px,#fff 36px 48px)}
+main{max-width:640px;margin:0 auto;padding:1.5rem 1rem 1rem}
+h1{font:700 clamp(2.6rem,12vw,4rem)/.95 "Barlow Condensed",sans-serif;margin:0 0 .5rem;letter-spacing:.01em}
+.lead{margin:0 0 .25rem;font-size:1.1rem}
+.meta{margin:0 0 1.5rem;color:var(--muted);font-size:.95rem}
+h2{font:600 1.35rem/1.2 "Barlow Condensed",sans-serif;margin:1.75rem 0 .6rem;letter-spacing:.02em}
+.grid{display:grid;gap:.5rem}
+.days,.times{grid-template-columns:repeat(auto-fill,minmax(4.4rem,1fr))}
+.who{grid-template-columns:repeat(auto-fill,minmax(8rem,1fr))}
+.chip{position:relative;display:block;border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:.65rem .5rem;text-align:center;cursor:pointer;font-weight:500}
+.chip small{display:block;color:var(--muted);font-weight:400;text-transform:capitalize}
+.row{display:flex;justify-content:space-between;gap:1rem;text-align:left;padding:.8rem 1rem}
+.row small{display:inline;margin-left:.4rem}
+.row b{font-weight:600}
+.chip input{position:absolute;opacity:0;inset:0;cursor:pointer}
+.chip:has(input:checked){border-color:var(--blue);box-shadow:inset 0 0 0 2px var(--blue);}
+.chip:has(input:focus-visible){outline:3px solid var(--red);outline-offset:2px}
+.empty{color:var(--muted);margin:0}
+.field{display:grid;gap:.25rem;margin-bottom:.75rem}
+.field span{font-weight:600}
+input[type=text],input[type=tel]{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:.7rem .8rem;width:100%}
+input[type=text]:focus-visible,input[type=tel]:focus-visible{outline:3px solid var(--red);outline-offset:1px}
+.bar{position:sticky;bottom:0;background:var(--surface);border-top:1px solid var(--line);padding:.75rem 1rem calc(.75rem + env(safe-area-inset-bottom,0px))}
+.bar>div{max-width:640px;margin:0 auto;display:flex;align-items:center;gap:1rem;justify-content:space-between}
+#sum{margin:0;font-size:.95rem;color:var(--muted)}
+#go{flex:none;background:var(--red);color:var(--on);text-decoration:none;font:600 1.15rem "Barlow Condensed",sans-serif;letter-spacing:.03em;padding:.75rem 1.1rem;border-radius:6px}
+#go[aria-disabled=true]{opacity:.4;pointer-events:none}
+#go:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+.note{color:var(--muted);font-size:.9rem;margin:1.5rem 0 1rem}
+</style>
+</head>
+<body>
+<div class="pole" aria-hidden="true"></div>
+<main>
+  <h1>Barber Goat</h1>
+  <p class="lead">Escolha o serviço, o dia e o horário.</p>
+  <p class="meta">Horários: 8h às 10h e das 17h20 às 19h</p>
+
+  <h2>Serviço</h2>
+  <div class="grid" id="svc"></div>
+
+  <h2>Barbeiro</h2>
+  <div class="grid who" id="bar"></div>
+
+  <h2>Dia</h2>
+  <div class="grid days" id="days"></div>
+
+  <h2>Horário</h2>
+  <div class="grid times" id="times"></div>
+
+  <h2>Seus dados</h2>
+  <label class="field"><span>Nome</span><input type="text" id="nome" autocomplete="name"></label>
+  <label class="field"><span>Telefone</span><input type="tel" id="tel" autocomplete="tel" inputmode="tel"></label>
+
+  <p class="note">Ao confirmar, abrimos o WhatsApp da barbearia com o seu pedido. O horário só fica reservado quando respondermos.</p>
+</main>
+<div class="bar"><div>
+  <p id="sum">Escolha serviço, dia e horário.</p>
+  <a id="go" href="#" aria-disabled="true" target="_blank" rel="noopener">Confirmar no WhatsApp</a>
+</div></div>
+
+<script>
+var WA='5521996170734'; // número da barbearia com DDI+DDD
+var SERVICES=[['Corte',30,10],['Barba',30,7],['Corte + barba',60,15],['Sobrancelha',15,5]];
+var BARBERS=['Gabriel'];
+var sel={s:null,b:0,d:null,t:null};
+var $=function(id){return document.getElementById(id)};
+var fmtDay=new Intl.DateTimeFormat('pt-BR',{weekday:'short'});
+var fmtLong=new Intl.DateTimeFormat('pt-BR',{weekday:'long',day:'numeric',month:'long'});
+
+function chip(name,val,label,cls,checked){
+  return '<label class="chip '+(cls||'')+'"><input type="radio" name="'+name+'" value="'+val+'"'+(checked?' checked':'')+'>'+label+'</label>';
+}
+function days(){
+  var out=[],d=new Date();d.setHours(0,0,0,0);
+  while(out.length<12){ if(d.getDay()!==0) out.push(new Date(d)); d.setDate(d.getDate()+1); }
+  return out;
+}
+var DAYS=days();
+function slots(d){
+  var all=['08:00','08:30','09:00','09:30','17:20','17:50','18:20'],now=new Date();
+  return all.filter(function(s){
+    var t=new Date(d);t.setHours(+s.slice(0,2),+s.slice(3),0,0);
+    return t>new Date(now.getTime()+30*60000);
+  });
+}
+function renderStatic(){
+  $('svc').innerHTML=SERVICES.map(function(s,i){
+    return chip('s',i,'<span>'+s[0]+'<small>'+s[1]+' min</small></span><b>R$ '+s[2]+'</b>','row');
+  }).join('');
+  $('bar').innerHTML=BARBERS.map(function(b,i){return chip('b',i,b,'',i===0)}).join('');
+  $('days').innerHTML=DAYS.map(function(d,i){
+    return chip('d',i,'<small>'+fmtDay.format(d).replace('.','')+'</small>'+d.getDate());
+  }).join('');
+}
+function renderTimes(){
+  var el=$('times');
+  if(sel.d===null){el.innerHTML='<p class="empty">Escolha um dia para ver os horários.</p>';return}
+  var list=slots(DAYS[sel.d]);
+  el.innerHTML=list.length?list.map(function(t){return chip('t',t,t)}).join(''):'<p class="empty">Sem horários neste dia. Escolha outro dia.</p>';
+}
+function update(){
+  var nome=$('nome').value.trim(),tel=$('tel').value.trim();
+  var ok=sel.s!==null&&sel.d!==null&&sel.t&&nome&&tel;
+  var go=$('go');
+  if(sel.s!==null&&sel.d!==null&&sel.t){
+    $('sum').textContent=SERVICES[sel.s][0]+' · '+fmtLong.format(DAYS[sel.d])+' às '+sel.t;
+  } else { $('sum').textContent='Escolha serviço, dia e horário.'; }
+  go.setAttribute('aria-disabled',ok?'false':'true');
+  if(ok){
+    var msg='Olá! Quero agendar: '+SERVICES[sel.s][0]+' com '+BARBERS[sel.b]+', '+fmtLong.format(DAYS[sel.d])+' às '+sel.t+'. Nome: '+nome+'. Telefone: '+tel+'.';
+    go.href='https://wa.me/'+WA+'?text='+encodeURIComponent(msg);
+  } else go.href='#';
+  try{localStorage.setItem('barb-dados',JSON.stringify({n:nome,t:tel}))}catch(e){}
+}
+document.addEventListener('change',function(e){
+  var n=e.target.name,v=e.target.value;
+  if(n==='s')sel.s=+v; else if(n==='b')sel.b=+v;
+  else if(n==='d'){sel.d=+v;sel.t=null;renderTimes()} else if(n==='t')sel.t=v;
+  update();
+});
+$('nome').addEventListener('input',update);
+$('tel').addEventListener('input',update);
+$('go').addEventListener('click',function(e){if(this.getAttribute('aria-disabled')==='true')e.preventDefault()});
+renderStatic();renderTimes();
+try{var s=JSON.parse(localStorage.getItem('barb-dados')||'null');if(s){$('nome').value=s.n||'';$('tel').value=s.t||''}}catch(e){}
+update();
+</script>
+</body>
+</html>
